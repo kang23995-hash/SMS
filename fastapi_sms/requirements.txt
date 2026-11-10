@@ -1,0 +1,24 @@
+# ===== 运行依赖 =====
+# Web 框架与 ASGI 服务器
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.30.0
+
+# 数据库：aiomysql 是 PyMySQL 的异步版，底层复用 PyMySQL 的协议实现
+aiomysql>=0.2.0
+PyMySQL>=1.1.1
+# MySQL 8 默认认证插件 caching_sha2_password 需要 cryptography，缺少会报
+# "cryptography package is required for sha256_password or caching_sha2_password auth methods"
+cryptography>=42.0.0
+
+# PostgreSQL 异步驱动（DB_TYPE=postgresql 时需要；只用 MySQL 可以不装）
+asyncpg>=0.29.0
+
+# 配置与校验
+python-dotenv>=1.0.1
+pydantic>=2.8.0
+# Windows 上没有系统时区数据库，zoneinfo（APP_TIMEZONE 转换）依赖此包，
+# 缺少会导致时区转换静默降级，务必安装
+tzdata>=2024.1
+
+# 页面模板
+Jinja2>=3.1.4

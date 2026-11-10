@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SMS上传</string>
+    <string name="header_title">SMS上传</string>
+
+    <!-- 主界面 -->
+    <string name="label_server">电脑FastAPI服务IP:端口</string>
+    <string name="hint_server">192.168.1.100:8000</string>
+    <string name="btn_detect_phone">检测手机号</string>
+    <string name="btn_start_monitor">开启监测</string>
+    <string name="btn_stop_monitor">停止监测</string>
+    <string name="hint_sim1">卡槽1手机号（读取失败可手动填写）</string>
+    <string name="hint_sim2">卡槽2手机号（读取失败可手动填写）</string>
+    <string name="label_sim_result">SIM 检测结果</string>
+    <string name="sim_result_idle">尚未检测，点击"检测手机号"读取卡槽号码。</string>
+    <string name="sim_result_none">未检测到可用卡槽（可能是无 SIM、权限未授予或系统限制）。请手动填写手机号。</string>
+    <string name="sim_result_line">卡槽%1$d：%2$s</string>
+    <string name="sim_number_read_failed">读取失败，请手动填写</string>
+    <string name="log_title">状态日志</string>
+    <string name="btn_clear_log">清空</string>
+
+    <!-- 通知 -->
+    <string name="notif_channel_name">短信监测</string>
+    <string name="notif_channel_desc">短信监测服务常驻通知</string>
+    <string name="notif_title">短信监测中</string>
+    <string name="notif_listening">正在监听新短信并上传…</string>
+    <string name="notif_uploading">正在上传短信…</string>
+
+    <!-- 日志文本 -->
+    <string name="log_monitoring_started">监测已开启，服务开始常驻监听</string>
+    <string name="log_monitoring_stopped">监测已停止</string>
+    <string name="log_new_sms">新短信：来自 %1$s（卡槽%2$d）</string>
+    <string name="log_upload_retry">第 %1$d 次上传失败：%2$s，稍后重试</string>
+    <string name="log_upload_success">上传成功（HTTP %1$d）</string>
+    <string name="log_upload_timeout">上传超时，已丢弃该消息（%1$s）；监测服务继续运行</string>
+    <string name="log_boot_restore">开机完成，按上次状态恢复监测</string>
+    <string name="log_permission_denied">权限被拒绝，无法监测短信。请到系统设置中授予短信与电话权限</string>
+    <string name="log_detect_ok">已读取到 %1$d 个卡槽</string>
+    <string name="log_detect_failed">未读取到手机号，请手动填写</string>
+    <string name="log_server_invalid">服务器地址无效，请填写形如 192.168.1.100:8000 的地址</string>
+    <string name="log_server_saved">已保存服务器地址：%1$s</string>
+
+    <!-- 弹窗 -->
+    <string name="dialog_new_sms_title">监测到新短信</string>
+    <string name="dialog_new_sms_message">正在获取并上传…</string>
+    <string name="dialog_upload_success_title">上传成功</string>
+    <string name="dialog_upload_success_message">短信已成功上传到电脑端服务。</string>
+    <string name="dialog_upload_timeout_title">上传超时</string>
+    <string name="dialog_upload_timeout_message">本次消息上传超时，已丢弃该消息。短信监测服务不会停止，将继续监听后续短信。</string>
+
+    <!-- Toast -->
+    <string name="toast_new_sms">监测到新短信，正在获取并上传…</string>
+    <string name="toast_upload_success">短信上传成功</string>
+    <string name="toast_upload_timeout">上传超时，已丢弃该消息</string>
+
+    <!-- 电池优化引导 -->
+    <string name="battery_dialog_title">建议关闭电池优化</string>
+    <string name="battery_dialog_message">为保证短信监测服务不被系统在后台查杀，建议将本应用加入电池优化白名单（允许后台运行）。是否前往设置？</string>
+    <string name="battery_dialog_ok">前往设置</string>
+    <string name="battery_dialog_cancel">稍后</string>
+</resources>

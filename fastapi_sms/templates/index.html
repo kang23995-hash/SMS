@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_name }}</title>
+    {# 使用本地 Bootstrap，不依赖 CDN，断网 / 纯局域网环境也能正常显示 #}
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <style>
+        body { background-color: #f5f6f8; }
+        .sms-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-width: 42rem;
+            margin-bottom: 0;
+            font-family: inherit;
+        }
+        /* 长短信默认折叠，点开看全文，避免表格被撑得没法看 */
+        details > summary { cursor: pointer; color: #0d6efd; }
+        details > pre { margin-top: .5rem; background: #f8f9fa; padding: .5rem .75rem; border-radius: .375rem; }
+        .table td { vertical-align: middle; }
+        /* 验证码列：放大、等宽、显眼，方便一眼抄走 */
+        .vcode {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 1.05rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            color: #0d6efd;
+        }
+        /* 复选框列尽量窄，不抢正文宽度 */
+        .col-check { width: 2.25rem; }
+        /* 批量操作条在滚动时吸附在顶部，方便一边选一边操作 */
+        .bulk-bar { position: sticky; top: 0; z-index: 5; }
+    </style>
+</head>
+<body>
+<div class="container-fluid px-4 py-3">
+
+    <!-- ===================== 标题 + 概览 ===================== -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">{{ app_name }}</h4>
+            <small class="text-muted">短信列表 · 默认按接收时间倒序，最新在最上方</small>
+        </div>
+        <div class="text-end">
+            <span class="badge text-bg-primary">共 {{ total }} 条</span>
+            <span class="badge text-bg-secondary">设备 {{ device_count }} 台</span>
+            <a class="btn btn-sm btn-outline-secondary ms-2"
+               href="/?page=1&page_size={{ page_size }}{% if base_query %}&{{ base_query }}{% endif %}">刷新</a>
+        </div>
+    </div>
+
+    <!-- ===================== 筛选表单 ===================== -->
+    <form class="card card-body mb-3" method="get" action="/">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label mb-1" for="f-device">设备 ID</label>
+                <input class="form-control form-control-sm" id="f-device" name="device_id"
+                       value="{{ filters.device_id }}" placeholder="包含匹配，如 a1b2c3">
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label mb-1" for="f-phone">SIM 卡号</label>
+                <input class="form-control form-control-sm" id="f-phone" name="phone"
+                       value="{{ filters.sim_phone_number }}" placeholder="包含匹配，如 1380">
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label mb-1" for="f-sender">发送号码</label>
+                <input class="form-control form-control-sm" id="f-sender" name="sender"
+                       value="{{ filters.sender }}" placeholder="包含匹配，如 1069">
+            </div>
+            <div class="col-12 d-flex gap-2 mt-2">
+                <button class="btn btn-sm btn-primary" type="submit">查询</button>
+                <a class="btn btn-sm btn-outline-secondary" href="/">重置</a>
+                <input type="hidden" name="page_size" value="{{ page_size }}">
+            </div>
+        </div>
+    </form>
+
+    <!-- ===================== 错误提示 ===================== -->
+    {% if error_message %}
+        <div class="alert alert-danger" role="alert">
+            <strong>无法读取数据：</strong>{{ error_message }}
+        </div>
+    {% endif %}
+
+    <!-- 操作结果 / 失败提示（由下面的脚本填充） -->
+    <div id="action-alert" class="alert d-none" role="alert"></div>
+
+    <!-- ===================== 批量操作条 ===================== -->
+    <div class="bulk-bar d-flex flex-wrap align-items-center gap-2 mb-2">
+        <button type="button" id="btn-delete" class="btn btn-sm btn-danger" disabled>
+            删除选中（<span id="selected-count">0</span>）
+        </button>
+        <button type="button" id="btn-clear" class="btn btn-sm btn-outline-danger"
+                {% if total == 0 %}disabled{% endif %}>
+            清空全部
+        </button>
+        <span class="text-muted small">勾选左侧复选框可单选 / 多选，再点「删除选中」；「清空全部」会删除表内所有记录。</span>
+    </div>
+
+    <!-- ===================== 数据表格 ===================== -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th class="col-check">
+                        <input class="form-check-input" type="checkbox" id="select-all"
+                               title="全选 / 取消全选" aria-label="全选">
+                    </th>
+                    <th style="white-space: nowrap;">入库时间</th>
+                    <th style="white-space: nowrap;">接收时间</th>
+                    <th style="white-space: nowrap;">设备 ID</th>
+                    <th style="white-space: nowrap;">SIM 卡号</th>
+                    <th style="white-space: nowrap;">卡槽</th>
+                    <th style="white-space: nowrap;">发送方</th>
+                    <th style="white-space: nowrap;">发送号码</th>
+                    <th style="white-space: nowrap;">验证码</th>
+                    <th>短信内容</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in result.items %}
+                    <tr>
+                        <td class="col-check">
+                            <input class="form-check-input row-check" type="checkbox"
+                                   value="{{ row.id }}" aria-label="选择第 {{ row.id }} 行">
+                        </td>
+                        <td style="white-space: nowrap;">{{ row.create_time.strftime('%Y-%m-%d %H:%M:%S') if row.create_time else '-' }}</td>
+                        <td style="white-space: nowrap;">{{ row.receive_time.strftime('%Y-%m-%d %H:%M:%S') if row.receive_time else '-' }}</td>
+                        <td><code class="small">{{ row.device_id }}</code></td>
+                        <td style="white-space: nowrap;">{{ row.sim_phone_label }}</td>
+                        <td style="white-space: nowrap;">{{ row.sim_slot_label }}</td>
+                        <td style="white-space: nowrap;">
+                            {% if row.sender_name %}
+                                <span class="badge text-bg-light border">{{ row.sender_name }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">{{ row.sender }}</td>
+                        <td style="white-space: nowrap;">
+                            {% if row.sms_vcode %}
+                                <span class="vcode">{{ row.sms_vcode }}</span>
+                            {% else %}<span class="text-muted">-</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if row.message_content|length > 100 %}
+                                <details>
+                                    <summary>{{ row.message_content[:60] }}…（共 {{ row.message_content|length }} 字，点开看全文）</summary>
+                                    <pre class="sms-content">{{ row.message_content }}</pre>
+                                </details>
+                            {% else %}
+                                <span class="sms-content">{{ row.message_content }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-4">
+                            {% if error_message %}
+                                数据读取失败，见上方提示。
+                            {% elif filters.is_empty %}
+                                暂无短信记录。请确认安卓 APP 已开启监测并成功上传。
+                            {% else %}
+                                没有符合筛选条件的记录。
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===================== 分页 ===================== -->
+    {% macro page_url(target) -%}
+        /?page={{ target }}&page_size={{ page_size }}{% if base_query %}&{{ base_query }}{% endif %}
+    {%- endmacro %}
+
+    {% if total_pages > 1 %}
+        <nav class="mt-3" aria-label="分页">
+            <ul class="pagination pagination-sm justify-content-center mb-1">
+                <li class="page-item {% if not result.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ page_url(page - 1) }}">上一页</a>
+                </li>
+                {% if page_numbers and page_numbers[0] > 1 %}
+                    <li class="page-item"><a class="page-link" href="{{ page_url(1) }}">1</a></li>
+                    {% if page_numbers[0] > 2 %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endif %}
+                {% for p in page_numbers %}
+                    <li class="page-item {% if p == page %}active{% endif %}">
+                        <a class="page-link" href="{{ page_url(p) }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+                {% if page_numbers and page_numbers[-1] < total_pages %}
+                    {% if page_numbers[-1] < total_pages - 1 %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                    <li class="page-item"><a class="page-link" href="{{ page_url(total_pages) }}">{{ total_pages }}</a></li>
+                {% endif %}
+                <li class="page-item {% if not result.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ page_url(page + 1) }}">下一页</a>
+                </li>
+            </ul>
+            <p class="text-center text-muted small">
+                第 {{ page }} / {{ total_pages }} 页，每页 {{ page_size }} 条
+            </p>
+        </nav>
+    {% endif %}
+
+</div>
+
+<script>
+    /* ------------------------------------------------------------------
+     * 列表页的「删除选中 / 清空全部」交互。
+     * 纯原生 JS + fetch，不引入任何前端框架或 CDN 依赖。
+     * 删除接口见 routes/sms.py：POST /api/sms/delete、POST /api/sms/clear
+     * ------------------------------------------------------------------ */
+    (function () {
+        "use strict";
+
+        var DELETE_URL = "/api/sms/delete";
+        var CLEAR_URL = "/api/sms/clear";
+
+        var selectAll = document.getElementById("select-all");
+        var btnDelete = document.getElementById("btn-delete");
+        var btnClear = document.getElementById("btn-clear");
+        var countLabel = document.getElementById("selected-count");
+        var alertBox = document.getElementById("action-alert");
+
+        function rowChecks() {
+            return Array.prototype.slice.call(document.querySelectorAll(".row-check"));
+        }
+
+        function selectedIds() {
+            return rowChecks()
+                .filter(function (box) { return box.checked; })
+                .map(function (box) { return parseInt(box.value, 10); });
+        }
+
+        function refreshToolbar() {
+            var checked = selectedIds();
+            if (countLabel) { countLabel.textContent = String(checked.length); }
+            if (btnDelete) { btnDelete.disabled = checked.length === 0; }
+
+            var boxes = rowChecks();
+            if (selectAll) {
+                selectAll.checked = boxes.length > 0 && checked.length === boxes.length;
+                selectAll.indeterminate = checked.length > 0 && checked.length < boxes.length;
+            }
+        }
+
+        function showAlert(message, ok) {
+            if (!alertBox) { return; }
+            alertBox.className = "alert " + (ok ? "alert-success" : "alert-danger");
+            alertBox.textContent = message;
+        }
+
+        /* 发一个 JSON POST 请求；后端出错时抛异常，由调用方统一提示 */
+        async function postJson(url, body) {
+            var resp = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+            var data = {};
+            try { data = await resp.json(); } catch (e) { /* 非 JSON 响应则忽略 */ }
+            if (!resp.ok || (data && data.code && data.code !== 200)) {
+                throw new Error((data && data.msg) || ("HTTP " + resp.status));
+            }
+            return data;
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener("change", function () {
+                var on = selectAll.checked;
+                rowChecks().forEach(function (box) { box.checked = on; });
+                refreshToolbar();
+            });
+        }
+        rowChecks().forEach(function (box) {
+            box.addEventListener("change", refreshToolbar);
+        });
+
+        if (btnDelete) {
+            btnDelete.addEventListener("click", async function () {
+                var ids = selectedIds();
+                if (ids.length === 0) { return; }
+                if (!confirm("确定删除选中的 " + ids.length + " 条短信吗？此操作不可恢复。")) {
+                    return;
+                }
+                btnDelete.disabled = true;
+                try {
+                    var data = await postJson(DELETE_URL, { ids: ids });
+                    var n = (data && data.deleted != null) ? data.deleted : ids.length;
+                    showAlert("已删除 " + n + " 条，正在刷新页面…", true);
+                    setTimeout(function () { location.reload(); }, 600);
+                } catch (err) {
+                    showAlert("删除失败：" + err.message, false);
+                    refreshToolbar();
+                }
+            });
+        }
+
+        if (btnClear) {
+            btnClear.addEventListener("click", async function () {
+                if (!confirm("确定清空全部短信记录吗？该操作不可恢复！")) { return; }
+                if (!confirm("再次确认：将删除表内所有短信，是否继续？")) { return; }
+                btnClear.disabled = true;
+                try {
+                    var data = await postJson(CLEAR_URL, { confirm: true });
+                    var n = (data && data.deleted != null) ? data.deleted : "";
+                    showAlert("已清空 " + n + " 条，正在刷新页面…", true);
+                    setTimeout(function () { location.reload(); }, 600);
+                } catch (err) {
+                    showAlert("清空失败：" + err.message, false);
+                    btnClear.disabled = false;
+                }
+            });
+        }
+
+        refreshToolbar();
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# 私密配置（API Key 等）—— 绝对不能提交
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 运行产物
+data/*.db
+screenshots/
+qianwen_diagnose/
+*.log

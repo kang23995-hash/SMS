@@ -1,0 +1,19 @@
+SMS上传 (SMS Uploader)
+Copyright 2026
+
+------------------------------------------------------------
+本工程基于以下开源项目裁剪重构（Apache License 2.0）：
+
+  SMS Gateway for Android
+  https://github.com/capcom6/android-sms-gateway
+  Copyright (c) capcom6 and contributors
+  Licensed under the Apache License, Version 2.0
+
+重构范围说明：
+  原项目是一个功能完备的短信网关（含远程发短信 API、设备内置 HTTP 服务、
+  多 Webhook 配置、复杂消息过滤、本地历史消息持久化、设备管理页面等）。
+  本工程仅保留其中“短信监听 + 局域网 HTTP 上传”这一条链路，
+  其余功能全部移除，并重写了界面与网络层。
+
+  完整许可证文本见同目录 LICENSE 文件。
+------------------------------------------------------------

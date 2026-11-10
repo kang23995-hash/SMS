@@ -1,0 +1,26 @@
+[project]
+name = "fastapi-sms"
+version = "1.0.0"
+description = "短信监测系统服务端：接收安卓 APP 上报的短信并入库，提供 Web 列表页"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # Web 框架与 ASGI 服务器
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    # 数据库：aiomysql 为 PyMySQL 的异步版；MySQL 8 的 caching_sha2_password 需要 cryptography
+    "aiomysql>=0.2.0",
+    "PyMySQL>=1.1.1",
+    "cryptography>=42.0.0",
+    # 配置与校验
+    "python-dotenv>=1.0.1",
+    "pydantic>=2.8.0",
+    # Windows 无系统时区库，zoneinfo 依赖它
+    "tzdata>=2024.1",
+    # 页面模板
+    "Jinja2>=3.1.4",
+    "asyncpg>=0.32.0",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"

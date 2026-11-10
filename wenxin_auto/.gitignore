@@ -1,0 +1,9 @@
+# 私密配置（含本机地址等，绝不提交）
+.env
+
+# 运行数据
+data/
+screenshots/
+wenxin_diagnose/
+__pycache__/
+*.pyc

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- WiFi dot -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,68m-4.5,0a4.5,4.5 0,1 1,9 0a4.5,4.5 0,1 1,-9 0" />
+
+    <!-- WiFi inner arc (~40 degree span) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3.5"
+        android:pathData="M42.1,55.8 A16,16 0,0 1,65.9 55.8" />
+
+    <!-- WiFi outer arc (~50 degree span) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M33.3,46.2 A28,28 0,0 1,74.7 46.2" />
+
+    <!-- Divider line -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M38,76 L70,76" />
+
+    <!-- Upload arrow head -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,80 L46,89 L50.5,89 L50.5,96 L57.5,96 L57.5,89 L62,89 Z" />
+
+</vector>

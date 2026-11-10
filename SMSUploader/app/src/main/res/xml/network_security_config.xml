@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  电脑端 FastAPI 服务位于局域网内，通常使用明文 HTTP（例如 http://192.168.1.100:8000）。
+  因此这里显式允许 cleartext 流量。若后续改为 HTTPS，可把 cleartextTrafficPermitted 改为 false。
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
